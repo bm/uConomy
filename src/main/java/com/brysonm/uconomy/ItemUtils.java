@@ -23,6 +23,7 @@ public class ItemUtils {
         for(String word : materialName.split("_")) {
 
             StringUtils.capitalize(word);
+            words.add(word);
 
         }
 
