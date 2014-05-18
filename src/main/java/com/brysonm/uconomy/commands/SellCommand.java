@@ -2,6 +2,7 @@ package com.brysonm.uconomy.commands;
 
 import com.brysonm.uconomy.ItemUtils;
 import com.brysonm.uconomy.SaleUtils;
+import com.brysonm.uconomy.uConomy;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -9,13 +10,14 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class SellCommand implements CommandExecutor {
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if(sender instanceof Player) {
 
-            Player player = (Player) sender;
+            final Player player = (Player) sender;
 
             if(!player.hasPermission("uconomy." + cmd.getName().toLowerCase())) {
 
@@ -29,7 +31,7 @@ public class SellCommand implements CommandExecutor {
 
                 try {
 
-                    int amount = Integer.parseInt(args[0]);
+                    final int amount = Integer.parseInt(args[0]);
 
                     if(amount <= 0) {
 
@@ -39,7 +41,7 @@ public class SellCommand implements CommandExecutor {
 
                     }
 
-                    Material material = Material.matchMaterial(args[1].toUpperCase());
+                    final Material material = Material.matchMaterial(args[1].toUpperCase());
 
                     if(material == null) {
 
@@ -71,13 +73,21 @@ public class SellCommand implements CommandExecutor {
 
                     }
 
-                    double unitPrice = price / amount;
+                    final double unitPrice = price / amount;
 
-                    for(int i = 0; i < amount; i++) {
+                    new BukkitRunnable() {
 
-                        SaleUtils.constructSale(player, material, unitPrice);
+                        public void run() {
 
-                    }
+                            for(int i = 0; i < amount; i++) {
+
+                                SaleUtils.constructSale(player, material, unitPrice);
+
+                            }
+
+                        }
+
+                    }.runTaskAsynchronously(uConomy.getInstance());
 
                     player.getInventory().removeItem(new ItemStack(material, amount));
 
