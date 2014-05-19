@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,21 +49,29 @@ public class SaleUtils {
 
     }
 
-    public static List<Sale> getSales(Material material, int amount, boolean isBuying) {
+    public static List<Sale> getSales(final Material material, final int amount, boolean isBuying) {
 
-        List<Sale> list = new ArrayList<Sale>();
+        final List<Sale> list = new ArrayList<Sale>();
 
-        List<Double> prices = new ArrayList<Double>();
+        final List<Double> prices = new ArrayList<Double>();
 
-        for(Sale sale : sales) {
+        new BukkitRunnable() {
 
-            if(sale.getMaterial() == material) {
+            public void run() {
 
-                prices.add(sale.getPrice());
+                for(Sale sale : sales) {
+
+                    if(sale.getMaterial() == material) {
+
+                        prices.add(sale.getPrice());
+
+                    }
+
+                }
 
             }
 
-        }
+        }.runTaskAsynchronously(uConomy.getInstance());
 
         Collections.sort(prices);
 
@@ -70,29 +79,53 @@ public class SaleUtils {
 
         if(prices.size() < amount) {
 
-            for(int i = 0; i < prices.size(); i++) {
+            new BukkitRunnable() {
 
-                list.add(null);
+                public void run() {
 
-            }
+                    for(int i = 0; i < prices.size(); i++) {
+
+                        list.add(null);
+
+                    }
+
+                }
+
+            }.runTaskAsynchronously(uConomy.getInstance());
 
             return list;
 
         }
 
-        for(int i = 0; i < amount; i++) {
+        new BukkitRunnable() {
 
-            list.add(getSale(prices.get(i)));
+            public void run() {
 
-        }
+                for(int i = 0; i < amount; i++) {
+
+                    list.add(getSale(prices.get(i)));
+
+                }
+
+            }
+
+        }.runTaskAsynchronously(uConomy.getInstance());
 
         if(!isBuying) {
 
-            for(Sale sale : list) {
+            new BukkitRunnable() {
 
-                sales.add(sale);
+                public void run() {
 
-            }
+                    for(Sale sale : list) {
+
+                        sales.add(sale);
+
+                    }
+
+                }
+
+            }.runTaskAsynchronously(uConomy.getInstance());
 
         }
 
@@ -120,27 +153,35 @@ public class SaleUtils {
 
     }
 
-    public static void buyItems(Player player, List<Sale> list) {
+    public static void buyItems(final Player player, final List<Sale> list) {
 
-        for(Sale sale : list) {
+        new BukkitRunnable() {
 
-            player.getInventory().addItem(new ItemStack(sale.getMaterial(), 1));
+            public void run() {
 
-            uConomy.getSalesYML().getConfig().set("sales." + sale.getUUID().toString(), null);
+                for(Sale sale : list) {
 
-            uConomy.getSalesYML().saveConfig();
+                    player.getInventory().addItem(new ItemStack(sale.getMaterial(), 1));
 
-            BalanceUtils.withdrawAmount(player.getUniqueId(), sale.getPrice());
+                    uConomy.getSalesYML().getConfig().set("sales." + sale.getUUID().toString(), null);
 
-            BalanceUtils.depositAmount(sale.getPlayerUUID(), sale.getPrice());
+                    uConomy.getSalesYML().saveConfig();
 
-            if(Bukkit.getPlayer(sale.getPlayerUUID()) != null) {
+                    BalanceUtils.withdrawAmount(player.getUniqueId(), sale.getPrice());
 
-                Bukkit.getPlayer(sale.getPlayerUUID()).sendMessage(ChatColor.GOLD + "A player has bought 1 " + ItemUtils.toFriendlyName(sale.getMaterial()) + " from you for " + sale.getPrice() + " gold. Your new balance is " + BalanceUtils.getBalance(sale.getPlayerUUID()) + ".");
+                    BalanceUtils.depositAmount(sale.getPlayerUUID(), sale.getPrice());
+
+                    if(Bukkit.getPlayer(sale.getPlayerUUID()) != null) {
+
+                        Bukkit.getPlayer(sale.getPlayerUUID()).sendMessage(ChatColor.GOLD + "A player has bought 1 " + ItemUtils.toFriendlyName(sale.getMaterial()) + " from you for " + sale.getPrice() + " gold. Your new balance is " + BalanceUtils.getBalance(sale.getPlayerUUID()) + ".");
+
+                    }
+
+                }
 
             }
 
-        }
+        }.runTaskAsynchronously(uConomy.getInstance());
 
     }
 
